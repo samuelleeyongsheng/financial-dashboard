@@ -6,8 +6,13 @@ from datetime import datetime
 TICKERS = ["BTC-USD", "TSLA", "GOOGL"]
 
 def init_db():
+    # Create a new database and open a database connection
     con = sqlite3.connect('news.db')
+
+    # In order to execute SQL statements and fetch results from SQL queries, need to use a database cursor.
     c = con.cursor()
+
+    # Execute to create table if not exist 
     c.execute('''CREATE TABLE IF NOT EXISTS news
                  (id INTEGER PRIMARY KEY, 
                   ticker TEXT, 
@@ -16,6 +21,8 @@ def init_db():
                   publisher TEXT, 
                   published TEXT)''')
                   # not using integer as the format is integer mix some text
+                  
+    # After SQL commands, need to commit the changes into the news.db and close the connection
     con.commit()
     con.close()
 
