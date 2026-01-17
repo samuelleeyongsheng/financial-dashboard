@@ -1,32 +1,35 @@
 from google import genai
 from google.genai import types
-import sqlite3
 import json
 import time
 import os
 from dotenv import load_dotenv
+from supabase import create_client, Client # <--- 1. NEW IMPORT
 
 # --- CONFIGURATION ---
 load_dotenv()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+SUPABASE_URL = os.getenv('SUPABASE_URL') # <--- 2. LOAD NEW KEYS
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
-if not GEMINI_API_KEY:
-    raise ValueError("❌ Error: API Key not found! Did you create the .env file?")
+if not GEMINI_API_KEY or not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("❌ Error: Missing keys! Check GEMINI_API_KEY, SUPABASE_URL, and SUPABASE_KEY in .env")
 
-# Initialize the NEW Client
+# Initialize Clients
 client = genai.Client(api_key=GEMINI_API_KEY)
-
-def get_db_connection():
-    conn = sqlite3.connect('news.db')
-    conn.row_factory = sqlite3.Row # Allows us to access columns by name
-    return conn
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) # <--- 3. CONNECT TO CLOUD DB
 
 def analyze_news():
-    conn = get_db_connection()
-    c = conn.cursor()
+    # --- Update: FETCH FROM CLOUD INSTEAD OF SQLITE ---
+    # Old: c.execute("SELECT ... FROM news WHERE sentiment IS NULL LIMIT 5")
+    response = supabase.table("news") \
+        .select("id, title, ticker") \
+        .is_("sentiment", "null") \
+        .limit(5) \
+        .execute()
+    #limit 5 is setting rate limit for Gemini AI as i am using free plan 
     
-    # 1. Select 5 news articles that need analysis
-    rows = c.execute("SELECT id, title, ticker FROM news WHERE sentiment IS NULL LIMIT 5").fetchall()
+    rows = response.data # Supabase returns a list of dictionaries directly
     
     if not rows:
         print("✅ All news is already analyzed! No work to do.")
@@ -68,19 +71,20 @@ def analyze_news():
             # To be safe, we parse the text just like before.
             result = json.loads(response.text)
             
-            # 3. Save the result back to the database
-            c.execute("UPDATE news SET sentiment = ?, ai_summary = ? WHERE id = ?", 
-                      (result['sentiment'], result['summary'], news_id))
-            conn.commit()
+            # --- 6. UPDATE CLOUD INSTEAD OF SQLITE ---
+            # Old: c.execute("UPDATE news SET ... WHERE id = ?", ...)
+            supabase.table("news").update({
+                "sentiment": result['sentiment'],
+                "ai_summary": result['summary']
+            }).eq("id", news_id).execute()
+            
             print(f"   👉 Verdict: {result['sentiment']} | Summary: {result['summary']}")
             
-            # Sleep for 1 second to be nice to the API
-            time.sleep(1) 
+            time.sleep(1)
             
         except Exception as e:
             print(f"   ❌ Error analyzing ID {news_id}: {e}")
 
-    conn.close()
     print("💤 Analysis batch complete.")
 
 if __name__ == "__main__":
