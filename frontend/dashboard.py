@@ -1,48 +1,57 @@
 import streamlit as st
-import sqlite3
+from supabase import create_client
 import pandas as pd
 import os
+from dotenv import load_dotenv
 
-# --- 1. SETUP PAGE ---
+# --- SETUP PAGE CONFIG (Must be the first command) ---
 st.set_page_config(page_title="AI Financial Dashboard", layout="wide")
 
+# --- CONNECT TO SUPABASE ---
+load_dotenv()
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    st.error("❌ Error: Supabase keys missing in .env")
+    st.stop()
+
+@st.cache_resource #Prevents app from reconnecting to Supabase every single time you click a button (saves memory).
+#Connect to Cloud DB
+def init_connection():
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase = init_connection()
+
+# --- DATA LOADING FUNCTION ---
+def load_data():
+    # Connect to Supabase and fetch data
+    try:
+        response = supabase.table("news") \
+            .select("id, ticker, title, sentiment, ai_summary") \
+            .order("id", desc=True) \
+            .execute()
+        
+        data = response.data
+        df = pd.DataFrame(data)
+        return df
+    except Exception as e:
+        st.error(f"❌ Error loading data from Supabase: {e}")
+        return pd.DataFrame()  # Return empty DataFrame on error
+
+# --- DASHBOARD UI ---
 st.title("🤖 AI-Powered Financial Dashboard")
 st.markdown("Live sentiment analysis of financial news using **Google Gemini 2.5 Flash**")
 
-# --- 2. CONNECT TO DATABASE (The "Smart Path" Logic) ---
-def load_data():
-    # 1. Get the absolute path of THIS script (dashboard.py)
-    #    Example: C:/Users/Samuel/Project/frontend/dashboard.py
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # 2. Construct path to the DB: Go UP one level, then DOWN into backend
-    #    Result: C:/Users/Samuel/Project/backend/news.db
-    db_path = os.path.join(current_dir, '..', 'backend', 'news.db')
-    
-    try:
-        # Check if file exists first
-        if not os.path.exists(db_path):
-            st.error(f"❌ Database not found at: {db_path}")
-            return pd.DataFrame()
-
-        conn = sqlite3.connect(db_path)
-        query = "SELECT id, ticker, title, sentiment, ai_summary FROM news ORDER BY id DESC"
-        df = pd.read_sql(query, conn)
-        conn.close()
-        return df
-    except Exception as e:
-        st.error(f"❌ Error reading database: {e}")
-        return pd.DataFrame()
-
-# --- 3. AUTO-REFRESH BUTTON ---
+# --- REFRESH BUTTON ---
 if st.button('🔄 Refresh Data'):
     st.rerun()
 
-# --- 4. MAIN DASHBOARD ---
+# --- LOAD DATA ---
 df = load_data()
 
 if not df.empty:
-    # SECTION A: METRICS
+    # METRICS
     col1, col2, col3 = st.columns(3)
     
     total_news = len(df)
@@ -55,7 +64,7 @@ if not df.empty:
 
     st.divider()
 
-    # SECTION B: DATA TABLE
+    # DATA TABLE
     st.subheader("📰 Recent AI Analysis")
     
     st.dataframe(

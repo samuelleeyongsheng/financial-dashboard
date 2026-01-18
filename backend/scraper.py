@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime
 
-# --- 1. SETUP & CONFIGURATION ---
+# --- SETUP & CONFIGURATION ---
 load_dotenv()
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
@@ -19,28 +19,29 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Define assets news that i want to track 
 TICKERS = ["BTC-USD", "TSLA", "GOOGL"]
 
-# --- 2. UPDATED FUNCTION: SAVE TO CLOUD ---
+# --- UPDATED FUNCTION: SAVE TO CLOUD ---
+# User is just getting data from saved data in database
 def save_news_to_supabase(ticker, news_item):
     """
     Parses the raw Yahoo data and uploads it to Supabase.
     Returns True if new, False if duplicate.
     """
     
-    # A. ROBUST PARSING (Taken from your old code) -------------------------
-    # 1. Check if data is inside a 'content' box (Yahoo changes this often)
+    # ROBUST PARSING (Taken from your old code) -------------------------
+    # Check if data is inside a 'content' box (Yahoo changes this often)
     if 'content' in news_item:
         data = news_item['content']
     else:
         data = news_item
 
-    # 2. Extract Data Safely
+    # Extract Data Safely
     title = data.get('title', 'No Title')
     
     # (Note: Our current Cloud Table only has 'ticker' and 'title'. 
     # If we want to save 'link' and 'publisher' later, we must add columns to Supabase first.
     # For now, we just use the title for AI analysis.)
 
-    # B. DUPLICATE CHECK (Cloud Version) -----------------------------------
+    # DUPLICATE CHECK (Cloud Version) -----------------------------------
     # Ask Supabase: "Do you already have a row with this title?"
     try:
         existing = supabase.table("news").select("id").eq("title", title).execute()
@@ -50,7 +51,7 @@ def save_news_to_supabase(ticker, news_item):
         print(f"   ⚠️ Connection Error checking duplicates: {e}")
         return False
 
-    # C. INSERT (Cloud Version) --------------------------------------------
+    # INSERT (Cloud Version) --------------------------------------------
     try:
         row_data = {
             "ticker": ticker,
