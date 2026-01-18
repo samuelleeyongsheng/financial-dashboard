@@ -42,7 +42,7 @@ def analyze_news():
         title = row['title']
         ticker = row['ticker']
 
-        # 2. The Prompt: Ask Gemini to analyze the sentiment
+        # The Prompt: Ask Gemini to analyze the sentiment
         prompt = f"""
         You are a financial analyst. Analyze this news headline for {ticker}: 
         "{title}"
@@ -71,7 +71,7 @@ def analyze_news():
             # To be safe, we parse the text just like before.
             result = json.loads(response.text)
             
-            # --- 6. UPDATE CLOUD INSTEAD OF SQLITE ---
+            # --- UPDATE CLOUD INSTEAD OF SQLITE ---
             # Old: c.execute("UPDATE news SET ... WHERE id = ?", ...)
             supabase.table("news").update({
                 "sentiment": result['sentiment'],

@@ -2,17 +2,17 @@ import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
-# 1. Load keys from .env
+# Load keys from .env
 load_dotenv()
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_KEY")
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
 
 if not url or not key:
     print("❌ Error: Keys not found in .env file!")
     print("   Make sure you named them SUPABASE_URL and SUPABASE_KEY")
     exit()
 
-# 2. Connect to Cloud DB
+# Connect to Cloud DB
 print(f"🔌 Connecting to Supabase...")
 try:
     supabase: Client = create_client(url, key)
@@ -20,7 +20,7 @@ except Exception as e:
     print(f"❌ Connection failed: {e}")
     exit()
 
-# 3. Test Write (Insert)
+# Test Write (Insert)
 print("📝 Testing Write...")
 try:
     data = {
@@ -34,7 +34,7 @@ try:
 except Exception as e:
     print(f"   ❌ Write Failed: {e}")
 
-# 4. Test Read (Select)
+# Test Read (Select)
 print("👀 Testing Read...")
 try:
     response = supabase.table("news").select("*").eq("ticker", "TEST-COIN").execute()
@@ -46,7 +46,7 @@ try:
 except Exception as e:
     print(f"   ❌ Read Failed: {e}")
 
-# 5. Clean up (Delete the test row)
+# Clean up (Delete the test row)
 print("🧹 Cleaning up...")
 try:
     supabase.table("news").delete().eq("ticker", "TEST-COIN").execute()
