@@ -1,7 +1,7 @@
 Financial Dashboard
 
-Project Status: ⚠️ Archived / Discontinued
-This project is currently on hold and will not receive further updates. I have decided to move on to other projects that better align with my current technical goals and infrastructure.
+Project Status: 🛑 Discontinued
+This project is currently inactive. While the core logic and frontend components are functional, I have decided to move on to other projects due to infrastructure limitations regarding the backend execution.
 
 Project Overview
 The goal of this project was to create a Python-based financial dashboard to track and visualize financial data. The backend was designed to handle data processing and scheduling tasks to keep the dashboard updated.
