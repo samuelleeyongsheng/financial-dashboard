@@ -1,4 +1,5 @@
 Financial Dashboard
+
 Project Status: ⚠️ Archived / Discontinued
 This project is currently on hold and will not receive further updates. I have decided to move on to other projects that better align with my current technical goals and infrastructure.
 
